@@ -1,0 +1,2 @@
+igmpproxy: new-package-should-close-itp-bug
+igmpproxy: binary-without-manpage

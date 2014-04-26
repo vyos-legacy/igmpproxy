@@ -139,7 +139,7 @@ void acceptIgmp(int recvlen) {
                 return;
             }
             else if(!isAdressValidForIf(checkVIF, src)) {
-                my_log(LOG_WARNING, 0, "The source address %s for group %s, is not in any valid net for upstream VIF.",
+                my_log(LOG_INFO, 0, "The source address %s for group %s, is not in any valid net for upstream VIF.",
                     inetFmt(src, s1), inetFmt(dst, s2));
                 return;
             }

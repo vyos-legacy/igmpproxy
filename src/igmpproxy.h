@@ -249,7 +249,6 @@ int insertRoute(uint32_t group, int ifx);
 int activateRoute(uint32_t group, uint32_t originAddr);
 void ageActiveRoutes();
 void setRouteLastMemberMode(uint32_t group);
-int lastMemberGroupAge(uint32_t group);
 
 /* request.c
  */
@@ -267,7 +266,6 @@ void age_callout_queue(int);
 int timer_nextTimer();
 int timer_setTimer(int, timer_f, void *);
 int timer_clearTimer(int);
-int timer_leftTimer(int);
 
 /* confread.c
  */

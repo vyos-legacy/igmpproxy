@@ -1,0 +1,11 @@
+igmpproxy (1:0.1-ubnt1) unstable; urgency=low
+
+  * New version
+
+ -- An-Cheng Huang <ancheng@ubnt.com>  Tue, 28 Aug 2012 21:17:35 -0700
+
+igmpproxy (0.1-ubnt-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Stig Thormodsrud <stig@ubnt.com>  Fri, 15 Jul 2011 13:14:18 -0700

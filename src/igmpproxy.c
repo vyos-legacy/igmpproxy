@@ -39,7 +39,7 @@
 #include "igmpproxy.h"
 
 static const char Usage[] = 
-"Usage: igmpproxy [-h] [-d] [-v [-v]] <configfile>\n"
+"Usage: igmpproxy [-h] [-d] [-v [-v]] [configfile]\n"
 "\n" 
 "   -h   Display this help screen\n"
 "   -d   Run in debug mode. Output all messages on stderr\n"
@@ -61,6 +61,9 @@ static int sighandled = 0;
 #define	GOT_SIGUSR1	0x04
 #define	GOT_SIGUSR2	0x08
 
+// The default path for the config file...
+#define     IGMPPROXY_CONFIG_FILEPATH     "/etc/igmpproxy.conf"
+
 // The upstream VIF index
 int         upStreamVif;   
 
@@ -71,6 +74,7 @@ int         upStreamVif;
 */    
 int main( int ArgCn, char *ArgVc[] ) {
 
+        char *configFilePath = IGMPPROXY_CONFIG_FILEPATH;
     // Parse the commandline options and setup basic settings..
     for (int c; (c = getopt(ArgCn, ArgVc, "vdh")) != -1;) {
         switch (c) {
@@ -94,10 +98,10 @@ int main( int ArgCn, char *ArgVc[] ) {
     }
 
     if (optind != ArgCn - 1) {
-	fputs("You must specify the configuration file.\n", stderr);
-	exit(1);
+        fprintf(stderr, "Using default configuration file \"%s\"\n", IGMPPROXY_CONFIG_FILEPATH);
+    } else {
+        configFilePath = ArgVc[optind];
     }
-    char *configFilePath = ArgVc[optind];
 
     // Chech that we are root
     if (geteuid() != 0) {
@@ -123,20 +127,6 @@ int main( int ArgCn, char *ArgVc[] ) {
             my_log(LOG_ERR, 0, "Unable to initialize IGMPproxy.");
             break;
         }
-
-	if ( !Log2Stderr ) {
-
-	    // Only daemon goes past this line...
-	    if (fork()) exit(0);
-
-	    // Detach daemon from terminal
-	    if ( close( 0 ) < 0 || close( 1 ) < 0 || close( 2 ) < 0
-		 || open( "/dev/null", 0 ) != 0 || dup2( 0, 1 ) < 0 || dup2( 0, 2 ) < 0
-		 || setpgrp() < 0
-	       ) {
-		my_log( LOG_ERR, errno, "failed to detach daemon" );
-	    }
-	}
 
         // Go to the main loop.
         igmpProxyRun();
@@ -253,9 +243,8 @@ void igmpProxyRun() {
     struct  timeval  *timeout = &tv;
 
     // Initialize timer vars
-    difftime.tv_usec = 0;
-    gettimeofday(&curtime, NULL);
-    lasttime = curtime;
+        difftime.tv_usec = 0;
+        gettimeofday(&lasttime, NULL);
 
     // First thing we send a membership query in downstream VIF's...
     sendGeneralMembershipQuery();
@@ -274,6 +263,7 @@ void igmpProxyRun() {
 
         // Prepare timeout...
         secs = timer_nextTimer();
+        my_log(LOG_DEBUG, 0, "nextTimer pending after %d", secs);
         if(secs == -1) {
             timeout = NULL;
         } else {
@@ -295,7 +285,35 @@ void igmpProxyRun() {
             my_log( LOG_WARNING, errno, "select() failure" );
             continue;
         }
-        else if( Rt > 0 ) {
+
+        // At this point, we can handle timeouts...
+        // Handle timeouts before sockets processing because they may
+        // add new timeouts
+
+                /*
+                 * If the select timed out, then there's no other
+                 * activity to account for and we don't need to
+                 * call gettimeofday.
+                 */
+                gettimeofday(&curtime, NULL);
+                difftime.tv_sec = curtime.tv_sec - lasttime.tv_sec;
+                difftime.tv_usec += curtime.tv_usec - lasttime.tv_usec;
+                while (difftime.tv_usec > 1000000) {
+                        difftime.tv_sec++;
+                        difftime.tv_usec -= 1000000;
+                }
+                if (difftime.tv_usec < 0) {
+                        difftime.tv_sec--;
+                        difftime.tv_usec += 1000000;
+                }
+                if (difftime.tv_sec < 0)
+                {
+                        difftime.tv_sec = 0;
+                }
+                age_callout_queue(difftime.tv_sec);
+        memcpy(&lasttime, &curtime, sizeof(lasttime));
+
+        if( Rt > 0 ) {
 
             // Read IGMP request, and handle it...
             if( FD_ISSET( MRouterFD, &ReadFDS ) ) {
@@ -312,35 +330,6 @@ void igmpProxyRun() {
             }
         }
 
-        // At this point, we can handle timeouts...
-        do {
-            /*
-             * If the select timed out, then there's no other
-             * activity to account for and we don't need to
-             * call gettimeofday.
-             */
-            if (Rt == 0) {
-                curtime.tv_sec = lasttime.tv_sec + secs;
-                curtime.tv_usec = lasttime.tv_usec;
-                Rt = -1; /* don't do this next time through the loop */
-            } else {
-                gettimeofday(&curtime, NULL);
-            }
-            difftime.tv_sec = curtime.tv_sec - lasttime.tv_sec;
-            difftime.tv_usec += curtime.tv_usec - lasttime.tv_usec;
-            while (difftime.tv_usec > 1000000) {
-                difftime.tv_sec++;
-                difftime.tv_usec -= 1000000;
-            }
-            if (difftime.tv_usec < 0) {
-                difftime.tv_sec--;
-                difftime.tv_usec += 1000000;
-            }
-            lasttime = curtime;
-            if (secs == 0 || difftime.tv_sec > 0)
-                age_callout_queue(difftime.tv_sec);
-            secs = -1;
-        } while (difftime.tv_sec > 0);
 
     }
 

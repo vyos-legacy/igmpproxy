@@ -74,23 +74,44 @@ void free_all_callouts() {
  * elapsed_time seconds have passed; perform all the events that should
  * happen.
  */
-void age_callout_queue(int elapsed_time) {
-    struct timeOutQueue *ptr;
+void age_callout_queue(int elapsed_time)
+{
+    struct timeOutQueue *ptr, *to_last = NULL;
     int i = 0;
+    struct timeOutQueue  *to_queue = 0; /* timeouted queue */
 
-    for (ptr = queue; ptr; ptr = queue, i++) {
-        if (ptr->time > elapsed_time) {
+        my_log(LOG_DEBUG, 0, "age_callout: elapsed %d", elapsed_time);
+
+        for (ptr = queue; ptr; ptr = ptr->next)
+        {
+        if (ptr->time > elapsed_time)
+        {
             ptr->time -= elapsed_time;
-            return;
-        } else {
-            elapsed_time -= ptr->time;
-            queue = queue->next;
-            my_log(LOG_DEBUG, 0, "About to call timeout %d (#%d)", ptr->id, i);
-
-            if (ptr->func)
-                ptr->func(ptr->data);
-            free(ptr);
+            break;
         }
+                elapsed_time -= ptr->time;
+                to_last = ptr;
+    }
+
+    if (!to_last)
+    {
+        return;
+    }
+
+    to_queue = queue;
+    queue = to_last->next;
+    to_last->next = NULL;
+    while (to_queue)
+    {
+        ptr = to_queue;
+        to_queue = to_queue->next;
+
+        my_log(LOG_DEBUG, 0, "About to call timeout %d (#%d)", ptr->id, i);
+
+        if (ptr->func)
+                ptr->func(ptr->data);
+        free(ptr);
+        i++;
     }
 }
 
@@ -176,25 +197,6 @@ int timer_setTimer(int delay, timer_f action, void *data) {
 }
 
 /**
-*   returns the time until the timer is scheduled 
-*/
-int timer_leftTimer(int timer_id) {
-    struct timeOutQueue *ptr;
-    int left = 0;
-
-    if (!timer_id)
-        return -1;
-
-    for (ptr = queue; ptr; ptr = ptr->next) {
-        left += ptr->time;
-        if (ptr->id == timer_id) {
-            return left;
-        }
-    }
-    return -1;
-}
-
-/**
 *   clears the associated timer.  Returns 1 if succeeded. 
 */
 int timer_clearTimer(int  timer_id) {
@@ -226,8 +228,6 @@ int timer_clearTimer(int  timer_id) {
             if (ptr->next != 0)
                 (ptr->next)->time += ptr->time;
 
-            if (ptr->data)
-                free(ptr->data);
             my_log(LOG_DEBUG, 0, "deleted timer %d (#%d)", ptr->id, i);
             free(ptr);
             debugQueue();
