@@ -1,3 +1,15 @@
+igmpproxy (1:0.1+vyos2+lithium2) unstable; urgency=low
+
+  * Force release
+
+ -- Daniil Baturin <dmbaturin@squeeze32devel.multi.eu>  Sat, 25 Oct 2014 17:17:41 +0200
+
+igmpproxy (1:0.1+vyos2+lithium1) unstable; urgency=low
+
+  * New branch
+
+ -- Daniil Baturin <daniil@baturin.org>  Sat, 25 Oct 2014 22:10:52 +0700
+
 igmpproxy (1:0.1+vyos1+helium2) unstable; urgency=low
 
   * Force release
