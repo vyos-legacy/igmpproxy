@@ -1,3 +1,9 @@
+igmpproxy (1:0.1+vyos2+lithium3) unstable; urgency=low
+
+  * Force release
+
+ -- Alex Harpin <development@landsofshadow.co.uk>  Mon, 15 Dec 2014 21:38:09 +0000
+ 
 igmpproxy (1:0.1+vyos2+lithium2) unstable; urgency=low
 
   * Force release
