@@ -1,7 +1,7 @@
 Source: igmpproxy
 Section: contrib/net
 Priority: extra
-Maintainer: UBNT Package Maintainers <maintainers@ubnt.com>
+Maintainer: VyOS Package Maintainers <maintainers@vyos.net>
 Build-Depends: debhelper (>= 5), 
  autotools-dev, 
 Standards-Version: 3.7.2
