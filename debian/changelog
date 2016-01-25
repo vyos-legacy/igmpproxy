@@ -1,3 +1,12 @@
+igmpproxy (1:0.1+vyos2+current1) unstable; urgency=medium
+
+  [ Thomas Jepp ]
+  * Fix build depends.
+
+  [ Kim Hagen ]
+
+ -- Kim Hagen <kim.sidney@gmail.com>  Mon, 25 Jan 2016 03:33:42 -0500
+
 igmpproxy (1:0.1+vyos2+lithium4) unstable; urgency=low
 
   * Update maintainer address
